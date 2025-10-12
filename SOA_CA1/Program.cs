@@ -4,8 +4,12 @@ using SOA_CA1.Services.Holidays;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+
 builder.Services.AddHttpClient<NagerDateHolidayService>(c =>
-    c.BaseAddress = new Uri("https://date.nager.at/"));
+{
+    c.BaseAddress = new Uri("https://date.nager.at/");
+});
+
 builder.Services.AddScoped<IHolidayService, NagerDateHolidayService>();
 
 
