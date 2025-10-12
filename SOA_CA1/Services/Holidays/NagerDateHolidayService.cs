@@ -9,21 +9,28 @@ public class NagerDateHolidayService : IHolidayService
     public NagerDateHolidayService(HttpClient http)
     {
         _http = http;
+        if (_http.BaseAddress is null)
+            _http.BaseAddress = new Uri("https://date.nager.at/");
     }
 
     public async Task<bool> IsPublicHolidayAsync(DateOnly date, string countryCode)
     {
         var year = date.Year;
-        var holidays = await _http.GetFromJsonAsync<List<NagerHoliday>>(
+        // GET /api/v3/PublicHolidays/{year}/{countryCode}
+        var items = await _http.GetFromJsonAsync<List<NagerHolidayDto>>(
             $"api/v3/PublicHolidays/{year}/{countryCode}");
-        return holidays?.Any(h => DateOnly.FromDateTime(h.Date) == date) == true;
+
+        if (items is null || items.Count == 0) return false;
+
+        return items.Any(h => DateOnly.FromDateTime(h.Date) == date);
     }
 
-    private sealed class NagerHoliday
+    private sealed class NagerHolidayDto
     {
         public DateTime Date { get; set; }
         public string LocalName { get; set; } = "";
         public string Name { get; set; } = "";
     }
+
 }
 
