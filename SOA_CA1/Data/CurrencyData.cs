@@ -4,6 +4,8 @@ public static class CurrencyData
 {
     public record CurrencyOption(string Code, string Name);
 
+    public static readonly string[] Popular = new[] { "EUR", "USD", "GBP", "PLN" };
+
     public static readonly List<CurrencyOption> All = new()
     {
         new("AED","United Arab Emirates Dirham"),

@@ -31,11 +31,12 @@
 <div class="mb-3">
     <label class="form-label">From Currency:</label>
     <InputSelect @bind-Value="fromCur" class="form-select">
-        @foreach (var c in CurrencyData.All)
+        @foreach (var c in CurrenciesOrdered)
         {
             <option value="@c.Code">@c.Name (@c.Code)</option>
         }
     </InputSelect>
+
 </div>
 
 <div class="mb-3">
@@ -101,6 +102,11 @@
 
     static bool IsWeekend(DateOnly d)
     => d.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+    IEnumerable<CurrencyData.CurrencyOption> CurrenciesOrdered =>
+    CurrencyData.All
+        .OrderBy(c => Array.IndexOf(CurrencyData.Popular, c.Code) == -1 ? 1 : 0)
+        .ThenBy(c => c.Name);
 
     async Task Check()
     {
