@@ -2,6 +2,8 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Forms
 @inject SOA_CA1.Services.Holidays.IHolidayService Holidays
+@inject SOA_CA1.Services.Currency.IExchangeService Fx
+
 
 <h3>Holiday Planner</h3>
 
@@ -15,16 +17,41 @@
     <InputText @bind-Value="country" class="form-control" />
 </div>
 
-<button class="btn btn-primary" @onclick="Check">Check</button>
+<div class="mb-3">
+    <label class="form-label">Budget:</label>
+    <InputNumber @bind-Value="amount" class="form-control" step="0.01" />
+</div>
+<div class="mb-3">
+    <label class="form-label">From Currency (e.g., EUR):</label>
+    <InputText @bind-Value="fromCur" class="form-control" />
+</div>
+<div class="mb-3">
+    <label class="form-label">To Currency (e.g., USD):</label>
+    <InputText @bind-Value="toCur" class="form-control" />
+</div>
+
+<button class="btn btn-primary" @onclick="Check" disabled="@checking">Check</button>
 
 @if (checking)
 {
     <p class="mt-3">Checking…</p>
 }
-else
-{
 
+@if (!checking)
+{
     <p class="mt-3">@status</p>
+
+    @if (converted is not null)
+    {
+        <p class="mt-2">
+            @amount @fromCur → @toCur =
+            <strong>@converted.Value.ToString("0.00")</strong>
+        </p>
+    }
+    else if (checkedOnce)
+    {
+        <p class="mt-2 text-warning">Couldn’t get a conversion just now.</p>
+    }
 }
 
 @code {
@@ -32,17 +59,36 @@ else
     string country = "IE";
 
     bool checking;
+    bool checkedOnce;
     string status = "Not checked yet";
+
+    decimal amount = 100m;
+    string fromCur = "EUR";
+    string toCur = "USD";
+    decimal? converted;
 
     async Task Check()
     {
-        checking = true; status = "Checking…";
+        checking = true; checkedOnce = false; status = "Checking…";
         try
         {
             var isHoliday = await Holidays.IsPublicHolidayAsync(date, country.ToUpperInvariant());
-            status = isHoliday ? "Public holiday" : "Not a public holiday";
+            status = isHoliday ? "Public holiday " : "Not a public holiday";
+
+            converted = await Fx.ConvertAsync(
+                amount, fromCur.ToUpperInvariant(), toCur.ToUpperInvariant());
+
+            checkedOnce = true;
         }
-        catch (Exception ex) { status = $"Error: {ex.Message}"; }
-        finally { checking = false; }
+        catch (Exception ex)
+        {
+            status = $"Error: {ex.Message}";
+            converted = null;
+            checkedOnce = true;
+        }
+        finally
+        {
+            checking = false;
+        }
     }
 }
