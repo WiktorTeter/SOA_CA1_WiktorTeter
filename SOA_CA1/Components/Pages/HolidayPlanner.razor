@@ -27,13 +27,25 @@
     <label class="form-label">Budget:</label>
     <InputNumber @bind-Value="amount" class="form-control" step="0.01" />
 </div>
+
 <div class="mb-3">
-    <label class="form-label">From Currency (e.g., EUR):</label>
-    <InputText @bind-Value="fromCur" class="form-control" />
+    <label class="form-label">From Currency:</label>
+    <InputSelect @bind-Value="fromCur" class="form-select">
+        @foreach (var c in CurrencyData.All)
+        {
+            <option value="@c.Code">@c.Name (@c.Code)</option>
+        }
+    </InputSelect>
 </div>
+
 <div class="mb-3">
-    <label class="form-label">To Currency (e.g., USD):</label>
-    <InputText @bind-Value="toCur" class="form-control" />
+    <label class="form-label">To Currency:</label>
+    <InputSelect @bind-Value="toCur" class="form-select">
+        @foreach (var c in CurrencyData.All)
+        {
+            <option value="@c.Code">@c.Name (@c.Code)</option>
+        }
+    </InputSelect>
 </div>
 
 <button class="btn btn-primary" @onclick="Check" disabled="@checking">Check</button>
