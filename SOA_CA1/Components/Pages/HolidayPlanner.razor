@@ -4,6 +4,7 @@
 @inject SOA_CA1.Services.Holidays.IHolidayService Holidays
 @inject SOA_CA1.Services.Currency.IExchangeService Fx
 @using SOA_CA1.Models
+@using SOA_CA1.Data
 
 <h3>Holiday Planner</h3>
 
@@ -13,8 +14,13 @@
 </div>
 
 <div class="mb-3">
-    <label class="form-label">Country (IE, ES, PL):</label>
-    <InputText @bind-Value="country" class="form-control" />
+    <label class="form-label">Country:</label>
+    <InputSelect @bind-Value="country" class="form-select">
+        @foreach (var c in countries)
+        {
+            <option value="@c.Code">@c.Name (@c.Code)</option>
+        }
+    </InputSelect>
 </div>
 
 <div class="mb-3">
@@ -78,6 +84,8 @@
     decimal? converted;
 
     List<Suggestion> suggestions = new();
+
+    List<CountryData.CountryOption> countries = CountryData.All;
 
     static bool IsWeekend(DateOnly d)
     => d.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
