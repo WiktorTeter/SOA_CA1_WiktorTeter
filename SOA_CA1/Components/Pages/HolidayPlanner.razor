@@ -1,4 +1,30 @@
 ﻿@page "/holiday"
+@using Microsoft.AspNetCore.Components.Forms
 
 <h3>Holiday Planner</h3>
-<p>Pick a date and country to check public holidays.</p>
+
+<div class="mb-3">
+    <label class="form-label">Date:</label>
+    <InputDate @bind-Value="date" class="form-control" />
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Country (IE, ES, PL):</label>
+    <InputText @bind-Value="country" class="form-control" />
+</div>
+
+<button class="btn btn-primary" @onclick="Check">Check</button>
+
+<p class="mt-3">@status</p>
+
+@code {
+    DateOnly date = DateOnly.FromDateTime(DateTime.Today);
+    string country = "IE";
+    string status = "Not checked yet";
+
+    Task Check()
+    {
+        status = $"Checking for {country} on {date:yyyy-MM-dd}...";
+        return Task.CompletedTask;
+    }
+}
