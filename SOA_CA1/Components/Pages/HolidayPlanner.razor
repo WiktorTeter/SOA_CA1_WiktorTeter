@@ -1,86 +1,111 @@
 ﻿@page "/holiday"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Forms
-@inject SOA_CA1.Services.Holidays.IHolidayService Holidays
-@inject SOA_CA1.Services.Currency.IExchangeService Fx
+@using SOA_CA1.Services.Holidays
+@using SOA_CA1.Services.Currency
 @using SOA_CA1.Models
 @using SOA_CA1.Data
+@inject IHolidayService Holidays
+@inject IExchangeService Fx
 
-<h3>Holiday Planner</h3>
+<h2 class="mb-4">Holiday Planner</h2>
 
-<div class="mb-3">
-    <label class="form-label">Date:</label>
-    <InputDate @bind-Value="date" class="form-control" />
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Plan Your Trip</h5>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Date</label>
+                <InputDate @bind-Value="date" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Country</label>
+                <InputSelect @bind-Value="country" class="form-select">
+                    @foreach (var c in countries)
+                    {
+                        <option value="@c.Code">@c.Name (@c.Code)</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Budget</label>
+                <InputNumber @bind-Value="amount" class="form-control" step="0.01" />
+            </div>
+        </div>
+
+        <div class="row g-4 mt-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">From Currency</label>
+                <InputSelect @bind-Value="fromCur" class="form-select">
+                    @foreach (var c in CurrenciesOrdered)
+                    {
+                        <option value="@c.Code">@c.Name (@c.Code)</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">To Currency</label>
+                <InputSelect @bind-Value="toCur" class="form-select">
+                    @foreach (var c in CurrencyData.All)
+                    {
+                        <option value="@c.Code">@c.Name (@c.Code)</option>
+                    }
+                </InputSelect>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button class="btn btn-primary" @onclick="Check" disabled="@checking">
+                @if (checking)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                }
+                Check
+            </button>
+        </div>
+
+        <div class="mt-4">
+            @if (checking)
+            {
+                <div class="alert alert-info" role="alert">Checking your trip details…</div>
+            }
+            else if (!checking && checkedOnce)
+            {
+                <div class="alert alert-secondary" role="alert">@status</div>
+
+                @if (converted is not null)
+                {
+                    <p class="fw-semibold mb-0">
+                        @amount @fromCur → @toCur =
+                        <span class="text-success">@converted.Value.ToString("0.00")</span>
+                    </p>
+                }
+                else
+                {
+                    <p class="text-warning">Couldn’t get a conversion just now.</p>
+                }
+            }
+        </div>
+    </div>
 </div>
 
-<div class="mb-3">
-    <label class="form-label">Country:</label>
-    <InputSelect @bind-Value="country" class="form-select">
-        @foreach (var c in countries)
-        {
-            <option value="@c.Code">@c.Name (@c.Code)</option>
-        }
-    </InputSelect>
-</div>
-
-<div class="mb-3">
-    <label class="form-label">Budget:</label>
-    <InputNumber @bind-Value="amount" class="form-control" step="0.01" />
-</div>
-
-<div class="mb-3">
-    <label class="form-label">From Currency:</label>
-    <InputSelect @bind-Value="fromCur" class="form-select">
-        @foreach (var c in CurrenciesOrdered)
-        {
-            <option value="@c.Code">@c.Name (@c.Code)</option>
-        }
-    </InputSelect>
-
-</div>
-
-<div class="mb-3">
-    <label class="form-label">To Currency:</label>
-    <InputSelect @bind-Value="toCur" class="form-select">
-        @foreach (var c in CurrencyData.All)
-        {
-            <option value="@c.Code">@c.Name (@c.Code)</option>
-        }
-    </InputSelect>
-</div>
-
-<button class="btn btn-primary" @onclick="Check" disabled="@checking">Check</button>
-
-@if (checking)
-{
-    <p class="mt-3">Checking…</p>
-}
-
-@if (!checking)
-{
-    <p class="mt-3">@status</p>
-
-    @if (converted is not null)
-    {
-        <p class="mt-2">
-            @amount @fromCur → @toCur =
-            <strong>@converted.Value.ToString("0.00")</strong>
-        </p>
-    }
-    else if (checkedOnce)
-    {
-        <p class="mt-2 text-warning">Couldn’t get a conversion just now.</p>
-    }
-}
 @if (suggestions.Count > 0)
 {
-    <h5 class="mt-3">Tips</h5>
-    <ul>
-        @foreach (var s in suggestions)
-        {
-            <li>@s.Message</li>
-        }
-    </ul>
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Travel Tips</h5>
+            <ul class="list-unstyled mb-0">
+                @foreach (var s in suggestions)
+                {
+                    <li class="mb-2"><i class="bi bi-lightbulb me-2 text-warning"></i>@s.Message</li>
+                }
+            </ul>
+        </div>
+    </div>
 }
 
 @code {
@@ -97,27 +122,28 @@
     decimal? converted;
 
     List<Suggestion> suggestions = new();
-
     List<CountryData.CountryOption> countries = CountryData.All;
 
     static bool IsWeekend(DateOnly d)
-    => d.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+        => d.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
     IEnumerable<CurrencyData.CurrencyOption> CurrenciesOrdered =>
-    CurrencyData.All
-        .OrderBy(c => Array.IndexOf(CurrencyData.Popular, c.Code) == -1 ? 1 : 0)
-        .ThenBy(c => c.Name);
+        CurrencyData.All
+            .OrderBy(c => Array.IndexOf(CurrencyData.Popular, c.Code) == -1 ? 1 : 0)
+            .ThenBy(c => c.Name);
 
     async Task Check()
     {
-        checking = true; checkedOnce = false; status = "Checking…";
+        checking = true;
+        checkedOnce = false;
+        status = "Checking…";
+
         try
         {
             var isHoliday = await Holidays.IsPublicHolidayAsync(date, country.ToUpperInvariant());
-            status = isHoliday ? "Public holiday " : "Not a public holiday";
+            status = isHoliday ? "Public holiday 🎉" : "Not a public holiday";
 
-            converted = await Fx.ConvertAsync(
-                amount, fromCur.ToUpperInvariant(), toCur.ToUpperInvariant());
+            converted = await Fx.ConvertAsync(amount, fromCur.ToUpperInvariant(), toCur.ToUpperInvariant());
 
             suggestions.Clear();
 
@@ -127,23 +153,22 @@
 
             suggestions.Add(dayType switch
             {
-                DayType.PublicHoliday => new Suggestion { Message = "Expect closures/celebrations—book attractions in advance.", Type = dayType, Priority = 0 },
+                DayType.PublicHoliday => new Suggestion { Message = "Expect closures or celebrations—book attractions early.", Type = dayType, Priority = 0 },
                 DayType.Weekend => new Suggestion { Message = "Weekend crowds—book transport early.", Type = dayType, Priority = 1 },
-                _ => new Suggestion { Message = "Weekday—often cheaper flights/hotels.", Type = dayType, Priority = 2 },
+                _ => new Suggestion { Message = "Weekday—often cheaper flights and hotels.", Type = dayType, Priority = 2 },
             });
 
             if (converted is not null)
             {
                 if (converted < 50)
-                    suggestions.Add(new Suggestion { Message = "Tight budget: stick to free parks & museums.", Type = dayType, Priority = 3 });
+                    suggestions.Add(new Suggestion { Message = "Tight budget: focus on free parks and museums.", Type = dayType, Priority = 3 });
                 else if (converted < 150)
                     suggestions.Add(new Suggestion { Message = "Comfortable: add one paid attraction.", Type = dayType, Priority = 4 });
                 else
-                    suggestions.Add(new Suggestion { Message = "High budget: upgrade dining or activities.", Type = dayType, Priority = 5 });
+                    suggestions.Add(new Suggestion { Message = "High budget: enjoy premium dining or activities.", Type = dayType, Priority = 5 });
             }
 
             suggestions.Sort();
-
             checkedOnce = true;
         }
         catch (Exception ex)
