@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using SOA_CA1.Services.Holidays;
-using Xunit;
+﻿using SOA_CA1.Services.Holidays;
 
 namespace SOA_CA1.Tests;
 

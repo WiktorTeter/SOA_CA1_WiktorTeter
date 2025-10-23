@@ -1,7 +1,4 @@
-﻿using SOA_CA1.Models;
-using Xunit;
-
-namespace SOA_CA1.Tests;
+﻿namespace SOA_CA1.Tests;
 
 public class BudgetAdviceTests
 {
